@@ -184,6 +184,8 @@ nvidia-smi
 #### Docker Compose 文件（原文）
 
 > 文件路径: `/root/anything-setup/docker-compose.yml`
+> 
+> 目前searxng并未集成稍后补充再更新
 
 ```yaml
 version: '3.3'
@@ -758,6 +760,20 @@ AnythingLLM Agent 决定使用工具
 
 > **设计经验**: supergateway 的 `--stateful` 模式保持会话状态，避免每次请求都重建浏览器/文件连接。`while true` 循环 + `sleep 1` 实现崩溃自动重启。
 
+> 修改文件： /root/anythingllm/plugins/anythingllm_mcp_servers.json ，添加以下内容
+```
+{                                                                                                                                                                                            
+  "mcpServers": {
+    "chrome-devtools": {
+      "url": "http://mcp-chrome:3001/sse"   // 访问 mcp-chrome 容器内部的 3001 端口
+    },
+    "codebase-memory": {
+      "url": "http://mcp-codebase:3002/sse" // 访问 mcp-codebase 容器内部的 3002 端口
+    }
+  }
+}
+```
+
 ---
 
 ### 3.6 规划中的模块
@@ -794,6 +810,18 @@ docker start searxng
 docker stop searxng
 docker restart searxng
 docker logs -f searxng
+docker exec -it searxng bash
+
+# === docker 调试经验 ===
+如果遇到容器无法访问与功能不健全，经常需要进入容器内部进行测试
+docker exec -it (searxng|anythingllm|mcp-codebase|mcp-chrome)
+通过curl等常用工具测试网络以及netstat -pln查看端口监听状态
+docker mcp-chrome这个容器部署过程很久，要多等一等才能完成部署并正确启动
+docker的外部接口访问受debian11系统的ufw影响，需要开启访问授权才可以访问。
+11434/tcp                  ALLOW IN    172.16.0.0/12              # Allow Docker containers to access Ollama
+8080                       ALLOW IN    172.16.0.0/12             
+8931/tcp                   ALLOW IN    172.16.0.0/12              # AnythingLLM API
+
 
 # === HTTP Exec API ===
 # 前台运行
