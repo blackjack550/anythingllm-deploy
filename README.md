@@ -235,7 +235,7 @@ services:
       bash -c "npm config set registry https://mirrors.cloud.tencent.com/npm/ &&
                npm install -g supergateway @modelcontextprotocol/server-puppeteer &&
                while true; do
-                 supergateway --stdio 'mcp-server-puppeteer' --port 3001 --host 0.0.0.0 --stateful
+                 supergateway --stdio 'mcp-server-puppeteer' --port 3001 --host 0.0.0.0 --browserArgs '--no-sandbox' --stateful
                  echo 'Supergateway exited, restarting in 1 second...'
                  sleep 1
                done"
