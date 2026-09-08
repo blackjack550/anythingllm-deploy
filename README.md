@@ -44,7 +44,7 @@
 │  │    容器通过 172.17.0.1:8931 执行宿主机命令           │ │
 │  └─────────────────────────────────────────────────────┘ │
 │                                                          │
-│  出网代理: 127.0.0.1:1081 (SearXNG 引擎访问外网)       │
+│  出网代理: 172.17.0.1:1081 (SearXNG 引擎访问外网)       │
 └──────────────────────────────────────────────────────────┘
 ```
 
@@ -98,7 +98,7 @@
 │  出网代理    │
 └──────┬───────┘
        │
-       ▼ (via proxy 127.0.0.1:1081)
+       ▼ (via proxy 172.17.0.1:1081)
    互联网搜索引擎
 ```
 
@@ -228,6 +228,9 @@ services:
     restart: always
     environment:
       - PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+      - HTTP_PROXY=http://172.17.0.1:1081
+      - HTTPS_PROXY=http://172.17.0.1:1081
+      - NO_PROXY=127.0.0.1,172.17.0.0/16,172.19.0.0/16
     command: >
       bash -c "npm config set registry https://mirrors.cloud.tencent.com/npm/ &&
                npm install -g supergateway @modelcontextprotocol/server-puppeteer &&
@@ -401,7 +404,7 @@ curl "http://172.17.0.1:8931/exec?cmd=mysql%20-h%2010.5.254.166%20-u%20fudonghua
 **镜像**: `searxng/searxng:latest`  
 **端口**: 8080  
 **配置目录**: `/root/searxng/`  
-**出网代理**: `http://127.0.0.1:1081` / `https://127.0.0.1:1081`  
+**出网代理**: `http://172.17.0.1:1081` / `https://172.17.0.1:1081`  
 **当前状态**: **88 个引擎可用**
 
 #### 目录结构
@@ -450,8 +453,8 @@ outgoing:
   max_request_timeout: 15.0
   proxies:
     all://:
-    - http://127.0.0.1:1081
-    - https://127.0.0.1:1081
+    - http://172.17.0.1:1081
+    - https://172.17.0.1:1081
 ```
 
 #### 已启用的核心引擎（88个中部分示例）
@@ -711,7 +714,7 @@ AnythingLLM Agent
 SearXNG (:8080)
     │
     │  聚合 88 个引擎结果
-    │  经代理 127.0.0.1:1081 出网
+    │  经代理 172.17.0.1:1081 出网
     ▼
 互联网 (Baidu/Bing/Bilibili/GitHub/StackOverflow/...)
     │
@@ -863,7 +866,7 @@ nvidia-smi
 |:---|:---|
 | **Ollama 速度慢** | `nvidia-smi` 检查 GPU 利用率；`curl /api/ps` 确认模型加载；检查是否全层 offload |
 | **容器访问宿主机服务超时** | 确认用 `172.17.0.1` 而非 `localhost`；检查 Exec API 是否存活 |
-| **SearXNG 引擎批量失效** | `cd /root/searxng && python3 settings_check.py check`；检查代理 `127.0.0.1:1081` 是否存活 |
+| **SearXNG 引擎批量失效** | `cd /root/searxng && python3 settings_check.py check`；检查代理 `172.17.0.1:1081` 是否存活 |
 | **MCP 服务无响应** | `docker logs mcp-chrome`；确认 supergateway 进程存活；检查端口冲突 |
 | **AnythingLLM 连不上 Ollama** | 容器内 `curl http://172.17.0.1:11434/api/version`；确认 Ollama 监听 0.0.0.0 |
 | **显存不足 OOM** | 降低模型量化（Q6→Q4）；减小 `OLLAMA_MODEL_TOKEN_LIMIT`；检查是否有其他进程占显存 |
@@ -887,7 +890,7 @@ nvidia-smi
 
 1. **`172.17.0.1` 是容器访问宿主机的网关 IP**：所有容器内对宿主机的服务调用（Ollama:11434, Exec API:8931）都必须用这个地址，不能用 `localhost` 或 `127.0.0.1`。
 
-2. **SearXNG 代理是关键瓶颈**：所有引擎出网都走 `127.0.0.1:1081`，代理挂了所有引擎都会超时。`settings_check.py` 检测时强制 `proxies=None` 直连本地容器，避免代理问题干扰判断。
+2. **SearXNG 代理是关键瓶颈**：所有引擎出网都走 `172.17.0.1:1081`，代理挂了所有引擎都会超时。`settings_check.py` 检测时强制 `proxies=None` 直连本地容器，避免代理问题干扰判断。
 
 3. **白名单 > 全开放**：Exec API 用命令白名单（而非 IP 白名单）更安全，因为容器网络是内网隔离的。白名单是逐步调试加出来的，覆盖了实际运维中 95% 的命令。
 
