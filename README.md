@@ -453,8 +453,7 @@ outgoing:
   max_request_timeout: 15.0
   proxies:
     all://:
-    - http://172.17.0.1:1081
-    - https://172.17.0.1:1081
+    - socks5h://172.17.0.1:1080
 ```
 
 #### 已启用的核心引擎（88个中部分示例）
